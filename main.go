@@ -24,7 +24,6 @@ func main() {
 	}
 
 	dbURL := cfg.DBUrl
-	fmt.Println(dbURL)
 
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
