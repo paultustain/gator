@@ -112,6 +112,20 @@ func handlerAdd(s *state, cmd command) error {
 		return err
 	}
 
+	s.db.CreateFeedFollow(context.Background(),
+		database.CreateFeedFollowParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			UserID: uuid.NullUUID{
+				UUID:  usr.ID,
+				Valid: true,
+			},
+			FeedID: uuid.NullUUID{
+				UUID:  feed.ID,
+				Valid: true,
+			},
+		})
 	fmt.Println(feed)
 
 	return nil
