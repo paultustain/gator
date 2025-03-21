@@ -12,4 +12,7 @@ RETURNING *;
 SELECT * FROM users WHERE name = $1;
 
 -- name: Reset :exec
-TRUNCATE TABLE users;
+TRUNCATE TABLE users, feeds CASCADE;
+
+-- name: GetUsers :many
+SELECT name FROM users;
