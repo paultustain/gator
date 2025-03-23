@@ -10,17 +10,12 @@ import (
 	"github.com/paultustain/gator/internal/database"
 )
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.args) == 0 {
 		return errors.New("not enough arguements")
 	}
 
-	feed, err := s.db.GetFeed(context.Background(), "https://hnrss.org/newest")
-	if err != nil {
-		return err
-	}
-
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	feed, err := s.db.GetFeed(context.Background(), cmd.args[0])
 	if err != nil {
 		return err
 	}
@@ -42,15 +37,12 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error {
-	current_user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return err
-	}
+func handlerFollowing(s *state, cmd command, user database.User) error {
+
 	follows, err := s.db.GetFeedFollowsUser(
 		context.Background(),
 		uuid.NullUUID{
-			UUID:  current_user.ID,
+			UUID:  user.ID,
 			Valid: true,
 		},
 	)
@@ -60,6 +52,34 @@ func handlerFollowing(s *state, cmd command) error {
 	}
 
 	fmt.Println(follows)
+
+	return nil
+}
+
+func handlerUnfollow(s *state, cmd command, user database.User) error {
+	if len(cmd.args) < 1 {
+		return errors.New("not enough arguments")
+	}
+
+	feed, err := s.db.GetFeed(context.Background(), cmd.args[0])
+	if err != nil {
+		return err
+	}
+
+	err = s.db.DeleteFeedFollow(context.Background(), database.DeleteFeedFollowParams{
+		UserID: uuid.NullUUID{
+			UUID:  user.ID,
+			Valid: true,
+		},
+		FeedID: uuid.NullUUID{
+			UUID:  feed.ID,
+			Valid: true,
+		},
+	})
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

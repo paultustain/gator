@@ -86,14 +86,9 @@ func handlerAgg(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAdd(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.args) < 2 {
 		return errors.New("not enough arguments")
-	}
-
-	usr, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return err
 	}
 
 	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
@@ -103,7 +98,7 @@ func handlerAdd(s *state, cmd command) error {
 		Name:      cmd.args[0],
 		Url:       cmd.args[1],
 		UserID: uuid.NullUUID{
-			UUID:  usr.ID,
+			UUID:  user.ID,
 			Valid: true,
 		},
 	})
@@ -118,7 +113,7 @@ func handlerAdd(s *state, cmd command) error {
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 			UserID: uuid.NullUUID{
-				UUID:  usr.ID,
+				UUID:  user.ID,
 				Valid: true,
 			},
 			FeedID: uuid.NullUUID{
