@@ -71,19 +71,55 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	return &rssFeed, nil
 }
 
-func handlerAgg(s *state, cmd command) error {
-	rss, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+func scrapeFeeds(s *state) error {
+	next_feed, err := s.db.GetNextFeedToFetch(context.Background())
+	if err != nil {
+		return err
+	}
+	fmt.Println("Found a feed to fetch!")
+
+	err = s.db.MarkFetchedFeed(
+		context.Background(),
+		database.MarkFetchedFeedParams{
+			time.Now(),
+			next_feed.ID,
+		},
+	)
+
+	if err != nil {
+		return err
+	}
+
+	rss, err := fetchFeed(context.Background(), next_feed.Url)
+
 	if err != nil {
 		return err
 	}
 
 	for _, rssItem := range rss.Channel.Item {
 		fmt.Println(html.UnescapeString(rssItem.Title))
-		fmt.Println(html.UnescapeString(rssItem.Description))
 
 	}
 
 	return nil
+}
+
+func handlerAgg(s *state, cmd command) error {
+
+	if len(cmd.args) < 1 {
+		return errors.New("not enough arguements")
+	}
+	timeBetweenRequests, err := time.ParseDuration(cmd.args[0])
+
+	if err != nil {
+		return err
+	}
+
+	ticker := time.NewTicker(timeBetweenRequests)
+	for ; ; <-ticker.C {
+		scrapeFeeds(s)
+	}
+
 }
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
@@ -104,7 +140,7 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 	})
 
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't fetch feed: %w", err)
 	}
 
 	s.db.CreateFeedFollow(context.Background(),
