@@ -1,4 +1,4 @@
-# Gator - A blog aggregation project 
+# gator - A blog aggregation project 
 
 Postgres and Go will need to be installed to run the programme.
 
