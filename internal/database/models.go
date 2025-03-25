@@ -15,10 +15,10 @@ type Feed struct {
 	ID            uuid.UUID
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
-	LastFetchedAt sql.NullTime
 	Name          string
 	Url           string
 	UserID        uuid.NullUUID
+	LastFetchedAt sql.NullTime
 }
 
 type FeedFollow struct {
@@ -27,6 +27,17 @@ type FeedFollow struct {
 	UpdatedAt time.Time
 	UserID    uuid.NullUUID
 	FeedID    uuid.NullUUID
+}
+
+type Post struct {
+	ID          uuid.UUID
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	Title       string
+	Url         string
+	Description string
+	PublishedAt time.Time
+	FeedID      uuid.NullUUID
 }
 
 type User struct {

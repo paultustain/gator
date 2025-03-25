@@ -8,6 +8,7 @@ import (
 	"html"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -78,13 +79,7 @@ func scrapeFeeds(s *state) error {
 	}
 	fmt.Println("Found a feed to fetch!")
 
-	err = s.db.MarkFetchedFeed(
-		context.Background(),
-		database.MarkFetchedFeedParams{
-			time.Now(),
-			next_feed.ID,
-		},
-	)
+	err = s.db.MarkFetchedFeed(context.Background(), next_feed.ID)
 
 	if err != nil {
 		return err
@@ -97,8 +92,40 @@ func scrapeFeeds(s *state) error {
 	}
 
 	for _, rssItem := range rss.Channel.Item {
-		fmt.Println(html.UnescapeString(rssItem.Title))
 
+		publish_date, err := time.Parse(time.RFC3339, rssItem.PubDate)
+
+		if err != nil {
+			fmt.Printf("Warning: couldn't parse date %s: %v\n", rssItem.PubDate, err)
+			publish_date = time.Now() // fallback
+		}
+
+		_, err = s.db.CreatePost(
+			context.Background(),
+			database.CreatePostParams{
+				ID:          uuid.New(),
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+				Title:       html.UnescapeString(rssItem.Title),
+				Url:         rssItem.Link,
+				Description: html.UnescapeString(rssItem.Description),
+				PublishedAt: publish_date,
+				FeedID: uuid.NullUUID{
+					UUID:  next_feed.ID,
+					Valid: true,
+				},
+			},
+		)
+
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate") {
+				// Ignore duplicate errors as specified
+				fmt.Printf("Skipping duplicate post: %s\n", rssItem.Title)
+				continue
+			}
+
+			fmt.Println("couldn't add post to posts - skipping: %w", err)
+		}
 	}
 
 	return nil
