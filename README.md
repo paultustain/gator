@@ -1,5 +1,3 @@
-# gator - A blog aggregation project 
+# gator 
 
-Postgres and Go will need to be installed to run the programme.
-
-This CLI tool allows a user to register, log in and extract RSS feeds of chosen blogs. 
+Code has been moved to https://codeberg.org/paultustain/gator
